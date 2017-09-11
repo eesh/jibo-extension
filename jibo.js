@@ -7,6 +7,7 @@
     let ledColorURL = 'led/color';
     let speakURL = 'speak';
     let eyeVisibilityURL = 'eye';
+    let moveURL = 'move';
 
     ext._shutdown = function() {};
 
@@ -111,6 +112,25 @@
         return deferred.promise();
     }
 
+    ext.moveLeft = function(callback) {
+      ext.lookAt(1, -1, 1, callback);
+    }
+
+    ext.moveRight = function(callback) {
+      ext.lookAt(1, 1, 1, callback);
+    }
+
+    ext.faceForward = function(callback) {
+      ext.lookAt(1, 0, 1, callback);
+    }
+
+    ext.lookAt = function(x, y, z, callback) {
+      var params = '?x='+x+'&y='+y+'&z='+z;
+      sendRequest(hostURL + moveURL, params, function (response) {
+        callback();
+      });
+    }
+
 
     // Block and block menu descriptions
     var descriptor = {
@@ -119,18 +139,22 @@
           ['w', 'Blink', 'blink'],
           ['w', 'speak %s', 'speak', ''],
           ['w', 'Set LED color R:%n G:%n B:%n', 'setLEDColor', '', '', ''],
-          ['w', 'Show Eye %m.trueFalse', 'showEye', 'true']
+          ['w', 'Show Eye %m.trueFalse', 'showEye', 'true'],
+          ['w', 'Move left', 'moveLeft'],
+          ['w', 'Move right', 'moveRight'],
+          ['w', 'Look forward', 'faceForward'],
+          ['w', 'Look at x: %n y: %n z: %n', 'lookAt', '1', '0', '1']
         ],
         menus: {
           trueFalse: ['true', 'false']
         }
     };
 
-    getLocalIP().then(function (localIp) {
-            var baseIp = localIp.substr(0, localIp.lastIndexOf('.') + 1);
-            findRobots(baseIp, 3000);
-            return;
-          });
+    // getLocalIP().then(function (localIp) {
+    //         var baseIp = localIp.substr(0, localIp.lastIndexOf('.') + 1);
+    //         findRobots(baseIp, 3000);
+    //         return;
+    //       });
 
     // Register the extension
     ScratchExtensions.register('Jibo extension', descriptor, ext);
