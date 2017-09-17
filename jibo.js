@@ -95,14 +95,6 @@
       }
     }
 
-    ext.lookat = function(direction, callback) {
-        if(direction == 'left') {
-          sendRequest('http://localhost:3000/lookat', null, function(response) {
-            callback()
-          })
-        }
-    }
-
     function getLocalIP() {
         let deferred = $.Deferred();
         window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;   //compatibility for firefox and chrome
@@ -131,6 +123,13 @@
 
     ext.faceForward = function(callback) {
       ext.lookAt(1, 0, 1, callback);
+    }
+
+    ext.lookAt = function(x, y, z, callback) {
+      var params = '?x='+x+'&y='+y+'&z='+z;
+-     sendRequest(hostURL + moveURL, params, function (response) {
+-        callback();
+      });
     }
 
     ext.captureImage = function(callback) {
