@@ -8,11 +8,12 @@
     let speakURL = 'speak';
     let eyeVisibilityURL = 'eye';
     let moveURL = 'move';
+    let captureURL = 'photo';
 
     ext._shutdown = function() {};
 
     ext._getStatus = function() {
-        var status = {status: 2, msg: 'Ready'};
+        let status = {status: 2, msg: 'Ready'};
         if(connected) {
           status = {status: 2, msg: 'Ready'};
         } else {
@@ -83,8 +84,8 @@
 
     function findRobots(baseIP, port) {
       robots = [];
-      for(var ip = 1; ip < 256; ip++) {
-        var testIP = 'http://' + baseIP + ip + ':'+port+'/';
+      for(let ip = 1; ip < 256; ip++) {
+        let testIP = 'http://' + baseIP + ip + ':'+port+'/';
         sendRequest(testIP, 'ip', function(response) {
           if (response.length > 1) {
             console.log('Robot found at: ' + response);
@@ -94,18 +95,26 @@
       }
     }
 
+    ext.lookat = function(direction, callback) {
+        if(direction == 'left') {
+          sendRequest('http://localhost:3000/lookat', null, function(response) {
+            callback()
+          })
+        }
+    }
+
     function getLocalIP() {
-        var deferred = $.Deferred();
+        let deferred = $.Deferred();
         window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;   //compatibility for firefox and chrome
-        var pc = new RTCPeerConnection({iceServers: []}), noop = function () {
+        let pc = new RTCPeerConnection({iceServers: []}), noop = function () {
         };
         pc.createDataChannel("");    //create a bogus data channel
         pc.createOffer(pc.setLocalDescription.bind(pc), noop);    // create offer and set local description
         pc.onicecandidate = function (ice) {  //listen for candidate events
             if (!ice || !ice.candidate || !ice.candidate.candidate)  return;
-            var regex = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/;
-            var candidate = ice.candidate.candidate;
-            var localIp = candidate.match(regex)
+            let regex = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/;
+            let candidate = ice.candidate.candidate;
+            let localIp = candidate.match(regex)
             pc.onicecandidate = noop;
             deferred.resolve(localIp[0]);
         };
@@ -124,26 +133,40 @@
       ext.lookAt(1, 0, 1, callback);
     }
 
-    ext.lookAt = function(x, y, z, callback) {
-      var params = '?x='+x+'&y='+y+'&z='+z;
-      sendRequest(hostURL + moveURL, params, function (response) {
-        callback();
+    ext.captureImage = function(callback) {
+      let camera = 'camera=left';
+      let distortion = '&distortion=false';
+      let resolution = '&resolution=MEDIUM';
+      let params = '?' + camera + distortion + resolution;
+      sendRequest(hostURL + captureURL, params, function (response) {
+        if(!response) {
+          callback(null);
+          return;
+        }
+        response = JSON.parse(response);
+        if (!response.success) {
+          callback(null);
+          return;
+        }
+        console.log(response.imgData);
+        callback(response.imgData);
       });
     }
 
 
     // Block and block menu descriptions
-    var descriptor = {
+    let descriptor = {
         blocks: [
           ['w', 'Connect to Jibo at %s', 'connectToJibo', 'http://localhost:3000/'],
           ['w', 'Blink', 'blink'],
           ['w', 'speak %s', 'speak', ''],
           ['w', 'Set LED color R:%n G:%n B:%n', 'setLEDColor', '', '', ''],
           ['w', 'Show Eye %m.trueFalse', 'showEye', 'true'],
-          ['w', 'Move left', 'moveLeft'],
-          ['w', 'Move right', 'moveRight'],
+          ['w', 'Look left', 'moveLeft'],
+          ['w', 'Look right', 'moveRight'],
           ['w', 'Look forward', 'faceForward'],
-          ['w', 'Look at x: %n y: %n z: %n', 'lookAt', '1', '0', '1']
+          ['w', 'Look at x: %n y: %n z: %n', 'lookAt', '1', '0', '1'],
+          ['w', 'take photo', 'captureImage']
         ],
         menus: {
           trueFalse: ['true', 'false']
@@ -151,7 +174,7 @@
     };
 
     // getLocalIP().then(function (localIp) {
-    //         var baseIp = localIp.substr(0, localIp.lastIndexOf('.') + 1);
+    //         let baseIp = localIp.substr(0, localIp.lastIndexOf('.') + 1);
     //         findRobots(baseIp, 3000);
     //         return;
     //       });
