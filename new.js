@@ -4,6 +4,9 @@
     var Bundle = null;
     var socket = null;
 
+    var headTouched = false;
+    var headTouches = null;
+
     var screenTouched = false;
     var screenVector = {};
     var personCount = 0;
@@ -12,6 +15,8 @@
     var motionCount = 0;
     var motionVector = null;
     var lastMotionVector = null;
+
+    var askQuestionCallback = null;
 
 
 
@@ -46,15 +51,26 @@
                screenVector = message.payload.data;
                screenTouched = true;
              } else if(message.payload.type == "lps-summary") {
-               personCount = payload.data.personCount;
-               personVector = payload.data.personVector;
-               motionCount = payload.data.motionCount;
-               motionVector = payload.data.motionVector;
+               personCount = message.payload.data.personCount;
+               personVector = message.payload.data.personVector;
+               motionCount = message.payload.data.motionCount;
+               motionVector = message.payload.data.motionVector;
+             } else if(message.payload.type == "head-touch") {
+               headTouches = message.payload.touches;
+               headTouched = true;
              }
            }
          }
          console.log(message);
       }
+    }
+
+    ext.onHeadTouch = function() {
+      if(headTouched === true) {
+        headTouched = false;
+        return true;
+      }
+      return false;
     }
 
     ext.onScreenTouch = function () {
@@ -179,18 +195,33 @@
       }
     }
 
-    ext.showEye = function(show, callback) {
-      let params = '?show=' + show;
 
-    }
-
-    ext.findRobots = function(callback) {
-      if(Backend == null) {
-        loadScript();
+    ext.askQuestion = function(question, callback) {
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "prompt": question,
+              "timestamp": Date.now()
+            },
+            "type":"mim",
+            "id":"mnvwvc6ydbjcfg60u5ou"
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        askQuestionCallback = callback;
+        callback(); // TODO: remove once I get call information
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
       }
-      Backend.scanForRobots(onNewRobot);
-      callback();
     }
+
+    // ext.showEye = function(show, callback) {
+    //   let params = '?show=' + show;
+    //
+    // }
 
 
     ext.moveLeft = function(callback) {
@@ -306,6 +337,30 @@
             },
             "type":"image",
             "id":"l8yovibh75ca72n67e3"
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
+    }
+
+    ext.hidePhoto = function(url, callback) {
+      // let camera = 'camera=left';
+      // let distortion = '&distortion=false';
+      // let resolution = '&resolution=MEDIUM';
+      // let params = '?' + camera + distortion + resolution;
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "timestamp": Date.now()
+            },
+            "type":"hideImage",
+            "id":"iuth2xj8a3tkrgk8m6jll"
           }
         };
         socket.send(JSON.stringify(commandMessage));
@@ -435,32 +490,34 @@
           ['h', 'On detect motion', 'onDetectMotion'],
           ['h', 'On detect person', 'onDetectPerson'],
           ['w', 'Connect to Jibo at %s', 'connectToJibo', 'ws://127.0.0.1:8888/'],
-          ['w', 'Blink', 'blink'],
-          ['w', 'speak %s', 'speak', ''],
+          ['w', 'Jibo blink', 'blink'],
+          ['w', 'Say: %s', 'speak', ''],
+          ['R', 'Ask %s', 'askQuestion', ''],
           ['w', 'Set LED color hex: %s', 'setLEDColorHex', ''],
           ['w', 'Set LED color R:%n G:%n B:%n', 'setLEDColor', '', '', ''],
           ['w', 'Show Eye %m.trueFalse', 'showEye', 'true'],
-          ['w', 'Look %m.lookAt', 'lookAtAngle', 'center'],
-          ['w', 'Look at x: %n y: %n z: %n', 'lookAt', '1', '0', '1'],
-          ['w', 'Turn attention %m.onOff', 'setAttention', 'on'],
-          ['w', 'Play animation %s', 'playAnimation', ''],
-          ['w', 'Take photo at url %s', 'captureImage', ''],
-          ['w', 'Show photo at url %s', 'showPhoto', ''],
-          ['r', 'Motion count', 'getMotionCount'],
-          ['r', 'Motion vector X', 'getMotionVectorX'],
-          ['r', 'Motion vector Y', 'getMotionVectorY'],
-          ['r', 'Motion vector Z', 'getMotionVectorZ'],
-          ['r', 'Person count', 'getPersonCount'],
-          ['r', 'Person vector X', 'getPersonVectorX'],
-          ['r', 'Person vector Y', 'getPersonVectorY'],
-          ['r', 'Person vector Z', 'getPersonVectorZ'],
+          ['w', 'Look at: %m.lookAt', 'lookAtAngle', 'center'],
+          ['w', 'Look at: x: %n y: %n z: %n', 'lookAt', '1', '0', '1'],
+          ['w', 'Turn attention: %m.onOff', 'setAttention', 'on'],
+          ['w', 'Play %s', 'playAnimation', ''],
+          ['w', 'Take photo, save as: %s', 'captureImage', ''],
+          ['w', 'Show %s', 'showPhoto', ''],
+          ['w', 'Hide image', 'hidePhoto'],
+          ['r', 'moving objects', 'getMotionCount'],
+          ['r', 'motion x', 'getMotionVectorX'],
+          ['r', 'motion y', 'getMotionVectorY'],
+          ['r', 'motion z', 'getMotionVectorZ'],
+          ['r', 'number of people', 'getPersonCount'],
+          ['r', 'person x', 'getPersonVectorX'],
+          ['r', 'person y', 'getPersonVectorY'],
+          ['r', 'person z', 'getPersonVectorZ'],
           ['r', 'Screen vector X', 'getScreenVectorX'],
           ['r', 'Screen vector Y', 'getScreenVectorY']
         ],
         menus: {
           lookAt: ['left', 'right', 'center', 'back'],
           trueFalse: ['true', 'false'],
-          onOff: ['on', 'off'],
+          onOff: ['ON', 'OFF'],
           vectorDimensions2D: ['x' , 'y'],
           vectorDimensions3D: ['x' , 'y', 'z']
         }
