@@ -223,6 +223,32 @@
       }
     }
 
+    ext.showPhoto = function(url, callback) {
+      // let camera = 'camera=left';
+      // let distortion = '&distortion=false';
+      // let resolution = '&resolution=MEDIUM';
+      // let params = '?' + camera + distortion + resolution;
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "type": "image/jpeg",
+              "url": url,
+              "timestamp": Date.now()
+            },
+            "type":"image",
+            "id":"l8yovibh75ca72n67e3"
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
+    }
+
     ext.setAttention = function (attention, callback) {
       var state = 'idle';
       var id = 'etsolxdeclmkj3nhjp3kb';
@@ -283,7 +309,8 @@
           ['w', 'Look at x: %n y: %n z: %n', 'lookAt', '1', '0', '1'],
           ['w', 'Turn attention %m.onOff', 'setAttention', 'on'],
           ['w', 'Play animation %s', 'playAnimation', ''],
-          ['w', 'take photo at url %s', 'captureImage', '']
+          ['w', 'Take photo at url %s', 'captureImage', ''],
+          ['w', 'Show photo at url %s', 'showPhoto', '']
         ],
         menus: {
           lookAt: ['left', 'right', 'center', 'back'],
