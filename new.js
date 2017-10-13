@@ -67,6 +67,7 @@
 
     ext.onDetectMotion = function () {
       if(motionCount > 0 && motionVector != lastMotionVector && motionVector != null) {
+        lastMotionVector = motionVector;
         return true;
       }
       return false;
@@ -74,6 +75,7 @@
 
     ext.onDetectPerson = function () {
       if(personCount > 0 && personVector != lastPersonVector && personVector != null) {
+        lastPersonVector = personVector;
         return true;
       }
       return false;
