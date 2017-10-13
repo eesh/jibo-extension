@@ -4,6 +4,17 @@
     var Bundle = null;
     var socket = null;
 
+    var screenTouched = false;
+    var screenVector = {};
+    var personCount = 0;
+    var personVector = null;
+    var lastPersonVector = null;
+    var motionCount = 0;
+    var motionVector = null;
+    var lastMotionVector = null;
+
+
+
     ext._shutdown = function() {};
 
     ext._getStatus = function() {
@@ -18,21 +29,54 @@
 
     function setupSocket() {
       socket.onopen = function() {
-         /*Send a small message to the console once the connection is established */
          console.log('Connected to jibo app frame');
       }
 
       socket.onmessage = function(message){
-         var server_message = JSON.parse(message.data);
-         if(server_message.name == "blockly.robotList") {
-           if(server_message.type == "robotlist") {
-             if(server_message.data.names.length > 0) {
+         message = JSON.parse(message.data);
+         if(message.name == "blockly.robotList") {
+           if(message.type == "robotlist") {
+             if(message.data.names.length > 0) {
                connected = true;
              }
            }
+         } else {
+           if(message.type == 'event') {
+             if(message.payload.type == "screen-touch") {
+               screenVector = message.payload.data;
+               screenTouched = true;
+             } else if(message.payload.type == "lps-summary") {
+               personCount = payload.data.personCount;
+               personVector = payload.data.personVector;
+               motionCount = payload.data.motionCount;
+               motionVector = payload.data.motionVector;
+             }
+           }
          }
-         console.log(server_message);
+         console.log(message);
       }
+    }
+
+    ext.onScreenTouch = function () {
+      if(screenTouched === true) {
+        screenTouched = false;
+        return true;
+      }
+      return false;
+    }
+
+    ext.onDetectMotion = function () {
+      if(motionCount > 0 && motionVector != lastMotionVector && motionVector != null) {
+        return true;
+      }
+      return false;
+    }
+
+    ext.onDetectPerson = function () {
+      if(personCount > 0 && personVector != lastPersonVector && personVector != null) {
+        return true;
+      }
+      return false;
     }
 
     ext.connectToJibo = function (host, callback) {
@@ -297,9 +341,76 @@
       }
     }
 
+    ext.getMotionCount = function() {
+      return motionCount;
+    }
+
+    ext.getMotionVectorX = function() {
+      if(motionVector == null) {
+        return 0;
+      }
+      return motionVector.x;
+    }
+
+    ext.getMotionVectorY = function() {
+      if(motionVector == null) {
+        return 0;
+      }
+      return motionVector.y;
+    }
+
+    ext.getMotionVectorZ = function() {
+      if(motionVector == null) {
+        return 0;
+      }
+      return motionVector.z;
+    }
+
+    ext.getPersonCount = function() {
+      return personCount;
+    }
+
+    ext.getPersonVectorX = function() {
+      if(personVector == null) {
+        return 0;
+      }
+      return personVector.x;
+    }
+
+    ext.getPersonVectorY = function() {
+      if(personVector == null) {
+        return 0;
+      }
+      return personVector.y;
+    }
+
+    ext.getPersonVectorZ = function() {
+      if(personVector == null) {
+        return 0;
+      }
+      return personVector.z;
+    }
+
+    ext.getScreenVectorX = function() {
+      if(screenVector == null) {
+        return 0;
+      }
+      return screenVector.x;
+    }
+
+    ext.getScreenVectorY = function() {
+      if(screenVector == null) {
+        return 0;
+      }
+      return screenVector.y;
+    }
+
     // Block and block menu descriptions
     let descriptor = {
         blocks: [
+          ['h', 'On screen touch', 'onScreenTouch'],
+          ['h', 'On detect motion', 'onDetectMotion'],
+          ['h', 'On detect person', 'onDetectPerson'],
           ['w', 'Connect to Jibo at %s', 'connectToJibo', 'ws://127.0.0.1:8888/'],
           ['w', 'Blink', 'blink'],
           ['w', 'speak %s', 'speak', ''],
@@ -310,12 +421,24 @@
           ['w', 'Turn attention %m.onOff', 'setAttention', 'on'],
           ['w', 'Play animation %s', 'playAnimation', ''],
           ['w', 'Take photo at url %s', 'captureImage', ''],
-          ['w', 'Show photo at url %s', 'showPhoto', '']
+          ['w', 'Show photo at url %s', 'showPhoto', ''],
+          ['r', 'Motion count', 'getMotionCount'],
+          ['r', 'Motion vector X', 'getMotionVectorX'],
+          ['r', 'Motion vector Y', 'getMotionVectorY'],
+          ['r', 'Motion vector Z', 'getMotionVectorZ'],
+          ['r', 'Person count', 'getPersonCount'],
+          ['r', 'Person vector X', 'getPersonVectorX'],
+          ['r', 'Person vector Y', 'getPersonVectorY'],
+          ['r', 'Person vector Z', 'getPersonVectorZ'],
+          ['r', 'Screen vector X', 'getScreenVectorX'],
+          ['r', 'Screen vector Y', 'getScreenVectorY']
         ],
         menus: {
           lookAt: ['left', 'right', 'center', 'back'],
           trueFalse: ['true', 'false'],
-          onOff: ['on', 'off']
+          onOff: ['on', 'off'],
+          vectorDimensions2D: ['x' , 'y'],
+          vectorDimensions3D: ['x' , 'y', 'z']
         }
     };
 
