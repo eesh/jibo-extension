@@ -198,11 +198,29 @@
       }
     }
 
-    ext.captureImage = function(callback) {
-      let camera = 'camera=left';
-      let distortion = '&distortion=false';
-      let resolution = '&resolution=MEDIUM';
-      let params = '?' + camera + distortion + resolution;
+    ext.captureImage = function(url, callback) {
+      // let camera = 'camera=left';
+      // let distortion = '&distortion=false';
+      // let resolution = '&resolution=MEDIUM';
+      // let params = '?' + camera + distortion + resolution;
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "url": url,
+              "timestamp": Date.now()
+            },
+            "type":"photo",
+            "id":"ir49rvv4v42nm8ledkdso"
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
     }
 
     ext.setAttention = function (attention, callback) {
@@ -265,7 +283,7 @@
           ['w', 'Look at x: %n y: %n z: %n', 'lookAt', '1', '0', '1'],
           ['w', 'Turn attention %m.onOff', 'setAttention', 'on'],
           ['w', 'Play animation %s', 'playAnimation', ''],
-          ['w', 'take photo', 'captureImage']
+          ['w', 'take photo at url %s', 'captureImage', '']
         ],
         menus: {
           lookAt: ['left', 'right', 'center', 'back'],
