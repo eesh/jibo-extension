@@ -177,9 +177,6 @@
         case 'back':
           angle = 3.14;
           id = 'rdar1z5itp854npicluamx';
-        case default:
-          angle = 0;
-          id = 'x2xbfg17pfe7ojng9xny5l';
       }
       if(connected == true) {
         var commandMessage = {
