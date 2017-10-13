@@ -70,7 +70,6 @@
         return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
     }
 
-
     ext.setLEDColor = function(red, green, blue, callback) {
       if(connected == true) {
         var commandMessage = {
@@ -93,8 +92,24 @@
     }
 
     ext.speak = function(phrase, callback) {
-      let params = '?words=' + phrase;
-
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "text": phrase,
+              "timestamp": Date.now()
+            },
+            "type":"tts",
+            "id":"8iziqydahmxoosr78pb8zo"
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
     }
 
     ext.showEye = function(show, callback) {
@@ -124,8 +139,66 @@
     }
 
     ext.lookAt = function(x, y, z, callback) {
-      var params = '?x='+x+'&y='+y+'&z='+z;
-      callback();
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              'x': x,
+              'y': y,
+              'z': z,
+              "timestamp": Date.now()
+            },
+            "type":"lookAt3D",
+            "id":"luzbwwsphl5yc5gd35ltp"
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
+    }
+
+    ext.lookAtAngle = function(direction, callback) {
+      var angle = null;
+      var id = null;
+      switch(direction) {
+        case 'left':
+          angle = 1.57;
+          id = 'gyv2w5gmd1fx3dsi1ya2q';
+        case 'right':
+          angle = -1.57;
+          id = '37puq9rz3u9dktwl4dta3f';
+        case 'center':
+          angle = 0;
+          id = 'x2xbfg17pfe7ojng9xny5l';
+        case 'back':
+          angle = 3.14;
+          id = 'rdar1z5itp854npicluamx';
+        case default:
+          angle = 0;
+          id = 'x2xbfg17pfe7ojng9xny5l';
+      }
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "angle": angle,
+              "timestamp": Date.now()
+            },
+            "type":"lookAt",
+            "id": id
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
     }
 
     ext.captureImage = function(callback) {
@@ -133,6 +206,54 @@
       let distortion = '&distortion=false';
       let resolution = '&resolution=MEDIUM';
       let params = '?' + camera + distortion + resolution;
+    }
+
+    ext.setAttention = function (attention, callback) {
+      var state = 'idle';
+      var id = 'etsolxdeclmkj3nhjp3kb';
+      if(attention == 'off') {
+        state = 'OFF';
+        id = '53v5yx4f99kqkdfcj4hf4';
+      }
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "state": state,
+              "timestamp": Date.now()
+            },
+            "type":"attention",
+            "id":id
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
+    }
+
+    ext.playAnimation = function(filePath, callback) {
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "filePath": filePath,
+              "timestamp": Date.now()
+            },
+            "type":"animation",
+            "id": 'fnqo3l6m1jjcrib7sz0xyc'
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
     }
 
     // Block and block menu descriptions
@@ -143,14 +264,16 @@
           ['w', 'speak %s', 'speak', ''],
           ['w', 'Set LED color R:%n G:%n B:%n', 'setLEDColor', '', '', ''],
           ['w', 'Show Eye %m.trueFalse', 'showEye', 'true'],
-          ['w', 'Look left', 'moveLeft'],
-          ['w', 'Look right', 'moveRight'],
-          ['w', 'Look forward', 'faceForward'],
+          ['w', 'Look %m.lookAt', 'lookAtAngle', 'center'],
           ['w', 'Look at x: %n y: %n z: %n', 'lookAt', '1', '0', '1'],
+          ['w', 'Turn attention %m.onOff', 'setAttention', 'on'],
+          ['w', 'Play animation %s', 'playAnimation', ''],
           ['w', 'take photo', 'captureImage']
         ],
         menus: {
-          trueFalse: ['true', 'false']
+          lookAt: ['left', 'right', 'center', 'back'],
+          trueFalse: ['true', 'false'],
+          onOff: ['on', 'off']
         }
     };
 
