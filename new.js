@@ -135,6 +135,27 @@
       }
     }
 
+    ext.setLEDColorHex = function(hex, callback) {
+      if(connected == true) {
+        var commandMessage = {
+          "type":"command",
+          "command": {
+            "data": {
+              "colour": hex,
+              "timestamp": Date.now()
+            },
+            "type":"ringColour",
+            "id":"rkj7naw3qhoeqqx75qie8p"
+          }
+        };
+        socket.send(JSON.stringify(commandMessage));
+        callback();
+      } else {
+        console.log('Not connected');
+        callback('Not connected');
+      }
+    }
+
     ext.speak = function(phrase, callback) {
       if(connected == true) {
         var commandMessage = {
@@ -414,6 +435,7 @@
           ['w', 'Connect to Jibo at %s', 'connectToJibo', 'ws://127.0.0.1:8888/'],
           ['w', 'Blink', 'blink'],
           ['w', 'speak %s', 'speak', ''],
+          ['w', 'Set LED color hex: %s', 'setLEDColorHex', ''],
           ['w', 'Set LED color R:%n G:%n B:%n', 'setLEDColor', '', '', ''],
           ['w', 'Show Eye %m.trueFalse', 'showEye', 'true'],
           ['w', 'Look %m.lookAt', 'lookAtAngle', 'center'],
